@@ -3,303 +3,413 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>差旅網址產生器</title>
+    <title>差旅網址產生器 - Fluent Design</title>
+    <!-- 引入 Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- 引入 XLSX -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    
+    <!-- 設定 Tailwind 的顏色變數以符合 Fluent UI -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        fluent: {
+                            blue: '#0078D4',
+                            hover: '#005A9E',
+                            bg: '#f0f2f5',
+                            excel: '#107C10' // 新增 Excel 綠色
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['"Segoe UI"', '"Microsoft JhengHei"', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
     <style>
-        /* --- Fluent Design Inspired Styles --- */
-        :root {
-            --accent-color: #0078D4;
-            --accent-color-hover: #005A9E;
-            --success-color: #107C10;
-            --danger-color: #D83B01;
-            --light-gray: #f3f3f3;
-            --medium-gray: #e1e1e1;
-            --dark-gray: #666;
-            --text-color: #212121;
-            --font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft JhengHei", Roboto, "Helvetica Neue", Arial, sans-serif;
-            --border-radius: 4px;
-            --shadow-sm: 0 1px 2px rgba(0,0,0,0.1);
-            --shadow-md: 0 4px 8px rgba(0,0,0,0.1);
+        .fade-in { animation: fadeIn 0.3s ease-in-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+        
+        /* 拖曳時的樣式 */
+        .dragging {
+            opacity: 0.5;
+            background-color: #f3f4f6;
+            border: 2px dashed #0078D4;
         }
-        body {
-            font-family: var(--font-family);
-            margin: 0;
-            padding: 2em;
-            background-color: var(--light-gray);
-            color: var(--text-color);
+        
+        /* Toggle Switch 樣式修正 */
+        .toggle-checkbox:checked {
+            border-color: #0078D4;
         }
-        .container {
-            max-width: 800px;
-            margin: 0 auto;
-            background: #fff;
-            padding: 2em 2.5em;
-            border-radius: 8px;
-            box-shadow: var(--shadow-md);
-            border: 1px solid var(--medium-gray);
-        }
-        h1 {
-            color: #000;
-            text-align: center;
-            margin-bottom: 0.5em;
-            font-weight: 600;
-        }
-	h4 {
-            color: #000;
-            text-align: center;
-            font-weight: 600;
-        }
-	.subtitle {
-		text-align: center;
-		color: #606060;
-		margin-bottom: 24px;
-	}
-        /* --- Start/End Points --- */
-        .endpoints-section {
-            background: #fafafa;
-            border: 1px solid var(--medium-gray);
-            padding: 1.5em;
-            margin-bottom: 2em;
-            border-radius: var(--border-radius);
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 1.5em;
-        }
-        .input-group {
-            margin-bottom: 1em;
-        }
-        label {
-            display: block;
-            margin-bottom: .5em;
-            font-weight: 600;
-            color: var(--dark-gray);
-            font-size: 0.9em;
-        }
-        input[type="text"], input[type="file"], select {
-            width: 100%;
-            padding: 10px;
-            border: 1px solid var(--medium-gray);
-            border-radius: var(--border-radius);
-            box-sizing: border-box;
-            font-size: 1em;
-            transition: box-shadow 0.2s, border-color 0.2s;
-        }
-        input:focus, select:focus {
-            outline: none;
-            border-color: var(--accent-color);
-            box-shadow: 0 0 0 2px rgba(0, 120, 212, 0.3);
-        }
-        /* --- Tabs --- */
-        .tab-container {
-            display: flex;
-            border-bottom: 1px solid var(--medium-gray);
-            margin-bottom: 1.5em;
-        }
-        .tab {
-            padding: 10px 20px;
-            cursor: pointer;
-            background-color: transparent;
-            border: none;
-            border-bottom: 2px solid transparent;
-            margin-bottom: -1px;
-            font-size: 1em;
-            font-weight: 500;
-            color: var(--dark-gray);
-            transition: color 0.2s, border-color 0.2s;
-        }
-        .tab:hover {
-            color: #000;
-        }
-        .tab.active {
-            color: var(--accent-color);
-            border-bottom-color: var(--accent-color);
-            font-weight: 600;
-        }
-        .tab-content { display: none; }
-        .tab-content.active { display: block; }
-
-        /* --- Buttons --- */
-        .btn {
-            padding: 10px 18px;
-            border: 1px solid transparent;
-            border-radius: var(--border-radius);
-            font-size: 1em;
-            font-weight: 500;
-            cursor: pointer;
-            transition: all 0.2s ease-in-out;
-            text-decoration: none;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-        }
-        .btn-primary {
-            background-color: var(--accent-color);
-            color: white;
-        }
-        .btn-primary:hover {
-            background-color: var(--accent-color-hover);
-            box-shadow: var(--shadow-sm);
-        }
-        .btn-secondary {
-            background-color: #fff;
-            color: var(--text-color);
-            border-color: #ccc;
-        }
-        .btn-secondary:hover {
-            background-color: #f9f9f9;
-            border-color: #bbb;
-        }
-        .btn-danger {
-            background: var(--danger-color);
-            color: white;
-            font-weight: bold;
-            padding: 5px 10px;
-        }
-        .btn-danger:hover {
-            opacity: 0.85;
-        }
-        .add-btn {
-            margin-top: 10px;
-            background-color: var(--success-color);
-            color: white;
-        }
-        .add-btn:hover {
-            background-color: #0E5B0E;
-        }
-        .main-btn {
-            width: 100%;
-            padding: 14px;
-            font-size: 1.2em;
-            font-weight: 600;
-            margin-top: 2em;
-        }
-        .address-list .input-group {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            margin-bottom: .75em;
-        }
-        .address-list input[type="text"] {
-            flex-grow: 1;
-        }
-
-        /* --- Result Area --- */
-        #result-container {
-            margin-top: 2em;
-            padding: 1.5em;
-            background-color: #f8f8f8;
-            border-radius: var(--border-radius);
-            border: 1px solid var(--medium-gray);
-            display: none; /* Initially hidden */
-        }
-        .result-input-wrapper {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 1em;
-        }
-        #result-url {
-            flex-grow: 1;
-        }
-        .result-buttons {
-            display: flex;
-            gap: 10px;
+        .toggle-checkbox:checked + .toggle-label {
+            background-color: #0078D4;
         }
     </style>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 </head>
-<body>
+<body class="bg-fluent-bg text-neutral-900 min-h-screen font-sans py-8 px-4 flex justify-center">
 
-    <div class="container">
-        <h1>差旅網址產生器</h1>
-		<h4>code with Gemini</h4>
-	<p class="subtitle">可產生超過10個地點之Google map網址</p>
-	<p class="subtitle">👍推薦使用Excel匯入功能(所有操作均在本機瀏覽器完成，您的檔案不會被上傳。)</p>
-        <div class="endpoints-section">
-            <div class="input-group">
-                <label for="start-point">起點</label>
-                <input type="text" id="start-point" placeholder="例如：臺中火車站">
+    <div class="max-w-3xl w-full space-y-6">
+        
+        <!-- Header -->
+        <div class="text-center space-y-2 mb-8">
+            <div class="flex items-center justify-center gap-2 text-fluent-blue">
+                <!-- Icon: Map -->
+                <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"></polygon><line x1="8" y1="2" x2="8" y2="18"></line><line x1="16" y1="6" x2="16" y2="22"></line></svg>
+                <h1 class="text-3xl font-bold tracking-tight text-neutral-800">差旅網址產生器</h1>
             </div>
-            <div class="input-group">
-                <label for="end-point">終點</label>
-                <input type="text" id="end-point" placeholder="例如：台中市政府衛生局">
-            </div>
-        </div>
-
-        <div class="tab-container">
-            <button class="tab active" onclick="showTab('manual')">手動輸入</button>
-            <button class="tab" onclick="showTab('excel')">從 Excel 匯入</button>
-        </div>
-
-        <div id="manual" class="tab-content active">
-            <div id="address-list">
-                <div class="input-group">
-                    <input type="text" placeholder="中途點 1" class="address-input">
-                </div>
-                <div class="input-group">
-                    <input type="text" placeholder="中途點 2" class="address-input">
+            <div class="flex flex-col items-center gap-1">
+                <p class="text-neutral-500 text-sm">可產生超過10個地點之Google map網址</p>
+                <div class="flex gap-4 text-xs text-neutral-400 mt-1">
+                    <span>✴️ 最多 24 個地點</span>
+					<span>👍 推薦使用Excel匯入功能</span>
+                    <span>🔒 資料僅在本機處理</span>
                 </div>
             </div>
-            <button class="btn add-btn" onclick="addAddressRow()">＋ 新增中途點</button>
         </div>
 
-        <div id="excel" class="tab-content">
-            <div class="input-group">
-                <label for="excel-file">選擇 Excel (.xlsx, .xls, .csv) 檔案：</label>
-                <input type="file" id="excel-file" accept=".xlsx, .xls, .csv">
+        <!-- Main Card -->
+        <div class="bg-white rounded-xl shadow-[0_2px_8px_rgba(0,0,0,0.08)] border border-neutral-200 overflow-hidden">
+            
+            <!-- Static Inputs -->
+            <div class="p-6 pb-0 space-y-5">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                    <!-- 起點 -->
+                    <div>
+                        <label for="start-point" class="block text-sm font-semibold text-neutral-700 mb-1.5">起點</label>
+                        <div class="relative">
+                            <div class="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400">
+                                <!-- Icon: Navigation -->
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="3 11 22 2 13 21 11 13 3 11"></polygon></svg>
+                            </div>
+                            <input type="text" id="start-point" placeholder="例如：臺中火車站" oninput="syncEndPoint()" class="w-full pl-9 px-3 py-2 bg-white border border-neutral-300 rounded-md text-neutral-900 placeholder-neutral-400 focus:outline-none focus:border-fluent-blue focus:ring-1 focus:ring-fluent-blue transition-all duration-200">
+                        </div>
+                    </div>
+                    <!-- 終點 -->
+                    <div>
+                        <div class="flex justify-between items-center mb-1.5">
+                            <label for="end-point" class="block text-sm font-semibold text-neutral-700">終點</label>
+                            
+                            <!-- 同起點開關 -->
+                            <div class="flex items-center gap-2">
+                                <span class="text-xs text-neutral-500">同起點</span>
+                                <div class="relative inline-block w-8 mr-2 align-middle select-none transition duration-200 ease-in">
+                                    <input type="checkbox" name="toggle" id="round-trip-toggle" onclick="toggleRoundTrip()" class="toggle-checkbox absolute block w-4 h-4 rounded-full bg-white border-4 appearance-none cursor-pointer transition-transform duration-200 ease-in-out translate-x-0 checked:translate-x-full"/>
+                                    <label for="round-trip-toggle" class="toggle-label block overflow-hidden h-4 rounded-full bg-neutral-300 cursor-pointer transition-colors duration-200 ease-in-out"></label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="relative">
+                            <div class="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400">
+                                <!-- Icon: MapPin -->
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+                            </div>
+                            <input type="text" id="end-point" placeholder="例如：台中市政府衛生局" class="w-full pl-9 px-3 py-2 bg-white border border-neutral-300 rounded-md text-neutral-900 placeholder-neutral-400 focus:outline-none focus:border-fluent-blue focus:ring-1 focus:ring-fluent-blue transition-all duration-200 disabled:bg-neutral-100 disabled:text-neutral-500">
+                        </div>
+                    </div>
+                </div>
             </div>
-            <div class="input-group">
-                <label for="column-selector">請選擇包含地址的欄位：</label>
-                <select id="column-selector" disabled>
-                    <option>請先上傳檔案</option>
-                </select>
+
+            <!-- Tabs Navigation -->
+            <div class="px-6 mt-6 border-b border-neutral-200">
+                <div class="flex gap-6">
+                    <button id="tab-excel-btn" onclick="switchTab('excel')" class="pb-3 px-1 text-sm font-semibold border-b-2 border-fluent-blue text-fluent-blue transition-colors duration-200 flex items-center gap-2">
+                        <!-- Icon: FileSpreadsheet -->
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 22h14a2 2 0 0 0 2-2V7.5L14.5 2H6a2 2 0 0 0-2 2v4"/><path d="M14 2v6h6"/><path d="M8 15h2v2H8z"/><path d="M14 15h2v2h-2z"/><path d="M8 19h2v2H8z"/><path d="M14 19h2v2h-2z"/><path d="M3 8h10a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/></svg>
+                        從 Excel 匯入
+                    </button>
+                    <button id="tab-manual-btn" onclick="switchTab('manual')" class="pb-3 px-1 text-sm font-semibold border-b-2 border-transparent text-neutral-500 hover:text-neutral-700 transition-colors duration-200 flex items-center gap-2">
+                        <!-- Icon: Plus -->
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                        手動輸入
+                    </button>
+                </div>
+            </div>
+
+            <!-- Tab Content -->
+            <div class="p-6 bg-neutral-50/50 min-h-[200px]">
+                
+                <!-- Excel Tab -->
+                <div id="tab-excel" class="space-y-5 fade-in">
+                    
+                    <div class="space-y-1.5">
+                        <label class="block text-sm font-semibold text-neutral-700">1. 上傳檔案</label>
+                        
+                        <!-- 上傳前狀態 (Upload Area) -->
+                        <div id="upload-area" class="bg-white p-6 rounded-lg border-2 border-neutral-200 border-dashed hover:border-fluent-blue hover:bg-blue-50/30 transition-all cursor-pointer group relative">
+                            <input type="file" id="excel-upload" accept=".xlsx, .xls, .csv" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10">
+                            <div class="flex flex-col items-center justify-center gap-2 text-neutral-500 group-hover:text-fluent-blue">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                                <span class="text-sm font-medium">點擊瀏覽或拖曳檔案至此</span>
+                                <span class="text-xs text-neutral-400">支援 .xlsx, .xls, .csv</span>
+                            </div>
+                        </div>
+
+                        <!-- 上傳後狀態 (File Artifact) -->
+                        <div id="file-artifact" class="hidden bg-white p-3 rounded-md border border-neutral-200 shadow-sm flex items-center justify-between fade-in">
+                            <div class="flex items-center gap-3 overflow-hidden">
+                                <!-- Excel Icon -->
+                                <div class="w-8 h-8 rounded bg-green-50 text-fluent-excel flex items-center justify-center shrink-0">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 22h14a2 2 0 0 0 2-2V7.5L14.5 2H6a2 2 0 0 0-2 2v4"/><path d="M14 2v6h6"/><path d="M8 15h2v2H8z"/><path d="M14 15h2v2h-2z"/><path d="M8 19h2v2H8z"/><path d="M14 19h2v2h-2z"/></svg>
+                                </div>
+                                <div class="flex flex-col min-w-0">
+                                    <span id="file-name-text" class="text-sm font-medium text-neutral-700 truncate">Filename.xlsx</span>
+                                    <span class="text-xs text-green-600 flex items-center gap-1">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                        讀取成功
+                                    </span>
+                                </div>
+                            </div>
+                            <button onclick="clearFile()" class="p-2 text-neutral-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors" title="移除檔案">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div id="column-selector-container" class="opacity-50 pointer-events-none transition-opacity duration-300">
+                        <label for="col-select" class="block text-sm font-semibold text-neutral-700 mb-1.5">2. 選擇地址欄位</label>
+                        <select id="col-select" disabled class="w-full px-3 py-2 bg-white border border-neutral-300 rounded-md text-neutral-900 focus:outline-none focus:border-fluent-blue focus:ring-1 focus:ring-fluent-blue disabled:bg-neutral-100 disabled:text-neutral-400">
+                            <option value="">-- 請先上傳檔案 --</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Manual Tab (隱藏) -->
+                <div id="tab-manual" class="hidden space-y-3 fade-in">
+                    <div id="manual-points-list" class="space-y-3">
+                        <!-- JS 會在這裡動態產生輸入框 -->
+                    </div>
+                    
+                    <button onclick="addManualPoint()" class="mt-2 text-sm text-fluent-blue font-medium hover:bg-blue-50 px-4 py-2 rounded-md transition-colors flex items-center gap-2 border border-transparent hover:border-blue-100">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                        新增中途點
+                    </button>
+                    <p class="text-xs text-neutral-400 mt-2 ml-1">提示：按住左側六點圖示可上下拖曳排序</p>
+                </div>
+            </div>
+
+            <!-- Footer Action -->
+            <div class="p-6 bg-white border-t border-neutral-100 flex flex-col items-center">
+                <div id="error-msg" class="w-full mb-4 p-3 bg-red-50 border border-red-100 text-red-700 rounded-md text-sm flex items-center gap-2 hidden">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+                    <span id="error-text"></span>
+                </div>
+                
+                <button onclick="generateLink()" class="w-full sm:w-auto min-w-[200px] bg-fluent-blue hover:bg-fluent-hover text-white font-semibold py-2.5 px-6 rounded-md shadow-sm active:scale-95 transition-all duration-150 flex items-center justify-center gap-2">
+                    產生路徑網址
+                </button>
             </div>
         </div>
 
-        <button class="btn btn-primary main-btn" onclick="generateUrl()">產生路徑網址</button>
+        <!-- Result Card -->
+        <div id="result-card" class="bg-white rounded-xl shadow-[0_4px_12px_rgba(0,0,0,0.1)] border border-neutral-200 p-6 hidden fade-in">
+            <h3 class="font-semibold text-lg mb-4 flex items-center gap-2 text-neutral-800">
+                <svg class="text-green-600" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                產生成功
+            </h3>
+            
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-semibold text-neutral-700 mb-1.5">預覽網址</label>
+                    <div class="flex gap-2">
+                        <input type="text" id="display-url" readonly class="flex-1 px-3 py-2 bg-neutral-50 border border-neutral-200 rounded-md text-neutral-600 text-sm font-mono truncate focus:outline-none select-all">
+                    </div>
+                </div>
 
-        <div id="result-container">
-            <label for="result-url">產生的網址 (可直接開啟)：</label>
-            <div class="result-input-wrapper">
-                 <input type="text" id="result-url" readonly title="此為方便閱讀的網址，複製請使用右方按鈕">
+                <div class="flex flex-col sm:flex-row gap-3 pt-2">
+                    <a id="open-link-btn" href="#" target="_blank" rel="noopener noreferrer" class="flex-1 inline-flex justify-center items-center gap-2 px-4 py-2 bg-fluent-blue text-white rounded-md font-medium hover:bg-fluent-hover transition-colors shadow-sm decoration-0">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
+                        在新分頁開啟
+                    </a>
+                    <button id="copy-btn" onclick="copyToClipboard()" class="flex-1 inline-flex justify-center items-center gap-2 px-4 py-2 border border-neutral-300 rounded-md font-medium bg-white text-neutral-700 hover:bg-neutral-50 transition-all duration-200">
+                        <svg id="copy-icon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                        <span id="copy-text">複製網址</span>
+                    </button>
+                </div>
             </div>
-            <div class="result-buttons">
-                <a href="#" id="open-link-btn" target="_blank" class="btn btn-primary">在新分頁開啟</a>
-                <button id="copy-btn" class="btn btn-secondary" onclick="copyUrl()">複製網址</button>
-            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="text-center text-neutral-400 text-sm py-4 font-medium">
+            code with Gemini 3 PRO
         </div>
     </div>
 
     <script>
+        // --- 狀態變數 ---
+        let currentTab = 'excel'; // 預設改為 excel
+        let manualPoints = [{ id: Date.now(), value: '' }];
+        let excelData = [];
+        let generatedUrlEncoded = '';
+        let isRoundTrip = false;
+        let dragStartIndex = -1;
         const MAX_LOCATIONS = 24;
-        let selectedColumnData = [];
-        let encodedUrlForCopy = '';
 
-        // Tab切換邏輯
-        function showTab(tabName) {
-            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-            document.getElementById(tabName).classList.add('active');
-            document.querySelector(`.tab[onclick="showTab('${tabName}')"]`).classList.add('active');
+        // --- 初始化 ---
+        window.onload = function() {
+            renderManualPoints();
+        };
+
+        // --- Tab 切換邏輯 ---
+        function switchTab(tabName) {
+            currentTab = tabName;
+            
+            const manualBtn = document.getElementById('tab-manual-btn');
+            const excelBtn = document.getElementById('tab-excel-btn');
+            const manualContent = document.getElementById('tab-manual');
+            const excelContent = document.getElementById('tab-excel');
+
+            const activeClass = "pb-3 px-1 text-sm font-semibold border-b-2 border-fluent-blue text-fluent-blue transition-colors duration-200 flex items-center gap-2";
+            const inactiveClass = "pb-3 px-1 text-sm font-semibold border-b-2 border-transparent text-neutral-500 hover:text-neutral-700 transition-colors duration-200 flex items-center gap-2";
+
+            if (tabName === 'manual') {
+                manualBtn.className = activeClass;
+                excelBtn.className = inactiveClass;
+                manualContent.classList.remove('hidden');
+                excelContent.classList.add('hidden');
+            } else {
+                excelBtn.className = activeClass;
+                manualBtn.className = inactiveClass;
+                excelContent.classList.remove('hidden');
+                manualContent.classList.add('hidden');
+            }
+            hideError();
         }
 
-        // 手動輸入：新增地址欄位
-        function addAddressRow() {
-            const list = document.getElementById('address-list');
-            // 起點和終點也算在內，所以這裡要扣掉2
-            const currentCount = list.getElementsByClassName('address-input').length + 2; 
-            if (currentCount >= MAX_LOCATIONS) {
-                alert(`最多只能新增 ${MAX_LOCATIONS} 個地點(含起點/終點)。`);
+        // --- 同起點 (來回) 邏輯 ---
+        function toggleRoundTrip() {
+            isRoundTrip = document.getElementById('round-trip-toggle').checked;
+            const endInput = document.getElementById('end-point');
+            const startInput = document.getElementById('start-point');
+            
+            if (isRoundTrip) {
+                endInput.disabled = true;
+                endInput.value = startInput.value;
+                endInput.classList.add('bg-neutral-100');
+            } else {
+                endInput.disabled = false;
+                endInput.classList.remove('bg-neutral-100');
+                endInput.value = ''; // 關閉時清空，或保留原值視需求而定
+            }
+        }
+
+        function syncEndPoint() {
+            if (isRoundTrip) {
+                const startVal = document.getElementById('start-point').value;
+                document.getElementById('end-point').value = startVal;
+            }
+        }
+
+        // --- 手動輸入 + 拖曳排序邏輯 ---
+        function renderManualPoints() {
+            const container = document.getElementById('manual-points-list');
+            container.innerHTML = '';
+            
+            manualPoints.forEach((point, index) => {
+                const row = document.createElement('div');
+                row.className = 'flex gap-2 items-center group fade-in';
+                row.setAttribute('draggable', 'true');
+                row.dataset.index = index;
+                
+                // 拖曳事件綁定
+                row.addEventListener('dragstart', handleDragStart);
+                row.addEventListener('dragover', handleDragOver);
+                row.addEventListener('drop', handleDrop);
+                row.addEventListener('dragenter', handleDragEnter);
+                row.addEventListener('dragleave', handleDragLeave);
+
+                row.innerHTML = `
+                    <!-- 拖曳手把 (Grip) -->
+                    <div class="cursor-move text-neutral-300 hover:text-neutral-500 p-1" title="拖曳以排序">
+                         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="12" r="1"></circle><circle cx="9" cy="5" r="1"></circle><circle cx="9" cy="19" r="1"></circle><circle cx="15" cy="12" r="1"></circle><circle cx="15" cy="5" r="1"></circle><circle cx="15" cy="19" r="1"></circle></svg>
+                    </div>
+
+                    <div class="w-6 h-6 rounded-full bg-neutral-200 text-neutral-500 flex items-center justify-center text-xs font-medium shrink-0 select-none">
+                        ${index + 1}
+                    </div>
+                    <input 
+                        type="text" 
+                        value="${point.value}" 
+                        oninput="updatePoint(${point.id}, this.value)"
+                        placeholder="中途點 ${index + 1}"
+                        class="w-full px-3 py-2 bg-white border border-neutral-300 rounded-md text-neutral-900 placeholder-neutral-400 focus:outline-none focus:border-fluent-blue focus:ring-1 focus:ring-fluent-blue transition-all duration-200"
+                    >
+                    <button 
+                        onclick="removePoint(${point.id})"
+                        class="p-2 text-neutral-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors"
+                        title="移除此地點"
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
+                    </button>
+                `;
+                container.appendChild(row);
+            });
+        }
+
+        // --- Drag & Drop Handlers ---
+        function handleDragStart(e) {
+            dragStartIndex = +this.dataset.index;
+            e.dataTransfer.effectAllowed = 'move';
+            setTimeout(() => this.classList.add('opacity-50'), 0);
+        }
+
+        function handleDragOver(e) {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+            return false;
+        }
+
+        function handleDragEnter(e) {
+            this.classList.add('border-fluent-blue', 'border-dashed', 'bg-neutral-50');
+        }
+
+        function handleDragLeave(e) {
+            this.classList.remove('border-fluent-blue', 'border-dashed', 'bg-neutral-50');
+        }
+
+        function handleDrop(e) {
+            e.stopPropagation();
+            
+            const dragEndIndex = +this.dataset.index;
+            
+            if (dragStartIndex !== dragEndIndex) {
+                const items = [...manualPoints];
+                const [reorderedItem] = items.splice(dragStartIndex, 1);
+                items.splice(dragEndIndex, 0, reorderedItem);
+                manualPoints = items;
+                renderManualPoints();
+            } else {
+                this.classList.remove('opacity-50');
+                this.classList.remove('border-fluent-blue', 'border-dashed', 'bg-neutral-50');
+                renderManualPoints();
+            }
+            
+            return false;
+        }
+
+        function addManualPoint() {
+            if (manualPoints.length + 2 >= MAX_LOCATIONS) {
+                showError(`最多只能設定 ${MAX_LOCATIONS} 個地點（含起點/終點）。`);
                 return;
             }
-            const newRow = document.createElement('div');
-            newRow.className = 'input-group';
-            newRow.innerHTML = `
-                <input type="text" placeholder="中途點 ${list.children.length + 1}" class="address-input">
-                <button class="btn btn-danger" onclick="this.parentElement.remove()" title="移除此地點">✕</button>
-            `;
-            list.appendChild(newRow);
+            manualPoints.push({ id: Date.now(), value: '' });
+            renderManualPoints();
         }
 
-        // Excel 檔案處理
-        document.getElementById('excel-file').addEventListener('change', function(e) {
+        function removePoint(id) {
+            manualPoints = manualPoints.filter(p => p.id !== id);
+            renderManualPoints();
+        }
+
+        function updatePoint(id, value) {
+            const point = manualPoints.find(p => p.id === id);
+            if (point) point.value = value;
+        }
+
+        // --- Excel 處理邏輯 ---
+        document.getElementById('excel-upload').addEventListener('change', function(e) {
             const file = e.target.files[0];
             if (!file) return;
 
@@ -313,111 +423,148 @@
                     const json = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
 
                     if (json.length === 0) {
-                        alert('Excel檔案為空或格式不符！');
+                        showError('Excel 檔案為空或格式不符！');
                         return;
                     }
+
+                    // 切換介面狀態：隱藏上傳區，顯示檔案卡片
+                    document.getElementById('upload-area').classList.add('hidden');
+                    document.getElementById('file-artifact').classList.remove('hidden');
+                    document.getElementById('file-name-text').textContent = file.name;
                     
-                    const columnSelector = document.getElementById('column-selector');
-                    columnSelector.innerHTML = '';
-                    columnSelector.disabled = false;
+                    // 啟用欄位選擇
+                    const select = document.getElementById('col-select');
+                    select.innerHTML = '<option value="">-- 請選擇 --</option>';
+                    select.disabled = false;
+                    document.getElementById('column-selector-container').classList.remove('opacity-50', 'pointer-events-none');
+
                     const headers = json[0] || [];
                     headers.forEach((header, index) => {
                         const option = document.createElement('option');
                         option.value = index;
                         option.textContent = `第 ${String.fromCharCode(65 + index)} 欄: ${header || '(空)'}`;
-                        columnSelector.appendChild(option);
+                        select.appendChild(option);
                     });
 
-                    columnSelector.onchange = function() {
-                        const colIndex = this.value;
-                        selectedColumnData = json.slice(1)
-                                                .map(row => row[colIndex])
-                                                .filter(cell => cell != null && cell.toString().trim() !== '');
-                    };
-                    columnSelector.dispatchEvent(new Event('change'));
+                    // 儲存資料
+                    excelData = json.slice(1); 
+                    hideError();
+
                 } catch (error) {
-                    alert('讀取檔案時發生錯誤，請確認檔案格式是否正確。');
                     console.error(error);
+                    showError('讀取檔案失敗，請確認格式是否正確 (.xlsx, .xls, .csv)');
                 }
             };
             reader.readAsArrayBuffer(file);
         });
 
-        // 主要功能：產生網址
-        function generateUrl() {
+        // --- 清空/刪除檔案 ---
+        function clearFile() {
+            // 清空資料
+            excelData = [];
+            document.getElementById('excel-upload').value = '';
+            
+            // 恢復介面狀態
+            document.getElementById('upload-area').classList.remove('hidden');
+            document.getElementById('file-artifact').classList.add('hidden');
+            
+            // 重置欄位選擇
+            const select = document.getElementById('col-select');
+            select.innerHTML = '<option value="">-- 請先上傳檔案 --</option>';
+            select.disabled = true;
+            document.getElementById('column-selector-container').classList.add('opacity-50', 'pointer-events-none');
+            
+            hideError();
+        }
+
+        // --- 核心：產生網址 ---
+        function generateLink() {
+            hideError();
             const startPoint = document.getElementById('start-point').value.trim();
             const endPoint = document.getElementById('end-point').value.trim();
 
-            // 檢查起點或終點是否為空，並跳出確認對話框
             if (!startPoint || !endPoint) {
-                // 如果使用者點擊「取消」，就中斷函式
-                if (!confirm('未輸入起訖地點，仍要繼續嗎？')) {
-                    return; 
-                }
-            }
-		
-            const activeTab = document.querySelector('.tab-content.active').id;
-            
-            let intermediatePoints = [];
-            if (activeTab === 'manual') {
-                document.querySelectorAll('#address-list .address-input').forEach(input => {
-                    const value = input.value.trim();
-                    if (value) intermediatePoints.push(value);
-                });
-            } else { // excel
-                intermediatePoints = selectedColumnData;
-            }
-
-            let allAddresses = [startPoint, ...intermediatePoints, endPoint].filter(addr => addr);
-
-            if (allAddresses.length < 2) {
-                alert('請至少提供兩個地點（可以是起點和終點）！');
+                showError('未輸入起訖地點，請確認已填寫起點與終點。');
                 return;
             }
+
+            let midPoints = [];
+            if (currentTab === 'manual') {
+                midPoints = manualPoints.map(p => p.value.trim()).filter(v => v !== '');
+            } else {
+                const colIdx = document.getElementById('col-select').value;
+                if (colIdx === '') {
+                    showError('請先選擇包含地址的 Excel 欄位');
+                    return;
+                }
+                midPoints = excelData
+                    .map(row => row[colIdx])
+                    .filter(cell => cell != null && cell.toString().trim() !== '')
+                    .map(cell => cell.toString().trim());
+            }
+
+            let allAddresses = [startPoint, ...midPoints, endPoint].filter(a => a);
+
+            if (allAddresses.length < 2) {
+                showError('請至少提供兩個有效地點（起點/終點或中途點）。');
+                return;
+            }
+
             if (allAddresses.length > MAX_LOCATIONS) {
-                 alert(`總地點數量 (${allAddresses.length}) 超過 ${MAX_LOCATIONS} 個，將只會使用前 ${MAX_LOCATIONS} 個。`);
-                 allAddresses = allAddresses.slice(0, MAX_LOCATIONS);
+                alert(`地點超過 ${MAX_LOCATIONS} 個，將只取前 ${MAX_LOCATIONS} 個地點。`);
+                allAddresses = allAddresses.slice(0, MAX_LOCATIONS);
             }
 
             const baseUrl = 'https://www.google.com.tw/maps/dir/';
-            
-            // 產生給瀏覽器用的編碼後 URL
-            encodedUrlForCopy = baseUrl + allAddresses.map(addr => encodeURIComponent(addr)).join('/');
-            
-            // 產生給使用者看的未編碼 URL
-            const decodedUrl = baseUrl + allAddresses.join('/');
+            generatedUrlEncoded = baseUrl + allAddresses.map(addr => encodeURIComponent(addr)).join('/');
+            const displayUrl = baseUrl + allAddresses.join('/');
 
-            const resultContainer = document.getElementById('result-container');
-            const resultUrlInput = document.getElementById('result-url');
-            const openLinkBtn = document.getElementById('open-link-btn');
-
-            resultUrlInput.value = decodedUrl;
-            openLinkBtn.href = encodedUrlForCopy;
-            resultContainer.style.display = 'block';
+            // 顯示結果
+            document.getElementById('result-card').classList.remove('hidden');
+            document.getElementById('display-url').value = displayUrl;
+            document.getElementById('open-link-btn').href = generatedUrlEncoded;
             
-            // 重置複製按鈕狀態
+            // 重置複製按鈕
             const copyBtn = document.getElementById('copy-btn');
-            copyBtn.textContent = '複製網址';
-            copyBtn.disabled = false;
+            const copyText = document.getElementById('copy-text');
+            copyBtn.className = "flex-1 inline-flex justify-center items-center gap-2 px-4 py-2 border border-neutral-300 rounded-md font-medium bg-white text-neutral-700 hover:bg-neutral-50 transition-all duration-200";
+            copyText.textContent = "複製網址";
         }
 
-        // 複製功能
-        async function copyUrl() {
-            if (!encodedUrlForCopy) return;
+        // --- 複製功能 ---
+        async function copyToClipboard() {
+            if (!generatedUrlEncoded) return;
             try {
-                await navigator.clipboard.writeText(encodedUrlForCopy);
+                await navigator.clipboard.writeText(generatedUrlEncoded);
+                
                 const copyBtn = document.getElementById('copy-btn');
-                copyBtn.textContent = '已複製！';
-                copyBtn.disabled = true;
+                const copyText = document.getElementById('copy-text');
+                
+                // 切換成成功樣式
+                copyBtn.className = "flex-1 inline-flex justify-center items-center gap-2 px-4 py-2 border border-green-200 bg-green-50 text-green-700 rounded-md font-medium transition-all duration-200";
+                copyText.textContent = "已複製！";
+                
                 setTimeout(() => {
-                    copyBtn.textContent = '複製網址';
-                    copyBtn.disabled = false;
+                    copyBtn.className = "flex-1 inline-flex justify-center items-center gap-2 px-4 py-2 border border-neutral-300 rounded-md font-medium bg-white text-neutral-700 hover:bg-neutral-50 transition-all duration-200";
+                    copyText.textContent = "複製網址";
                 }, 2000);
             } catch (err) {
-                alert('複製失敗，您的瀏覽器可能不支援此功能。');
-                console.error('Copy failed: ', err);
+                showError('複製失敗，請手動選取複製。');
             }
         }
+
+        // --- 錯誤處理輔助 ---
+        function showError(msg) {
+            const el = document.getElementById('error-msg');
+            const text = document.getElementById('error-text');
+            text.textContent = msg;
+            el.classList.remove('hidden');
+        }
+
+        function hideError() {
+            document.getElementById('error-msg').classList.add('hidden');
+        }
+
     </script>
 </body>
 </html>
